@@ -10,5 +10,4 @@
         $httpProvider.interceptors.push('casAuthenticatedApi');
     });
 
-
 })(angular.module('cas-authenticated-api'));
