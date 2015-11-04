@@ -1,6 +1,6 @@
 {
   "name": "angular-cas-authenticated-api",
-  "version": "0.0.1",
+  "version": "0.1.0",
   "author": "Brian Zoetewey <brian.zoetewey@ccci.org>",
   "description": "Module to authenticate angular webapps with CAS access-token protected APIs.",
   "main": "dist/cas-authenticated-api.js",
