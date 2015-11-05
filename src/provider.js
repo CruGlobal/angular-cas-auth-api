@@ -6,8 +6,8 @@
         // Configuration
         var _authenticationApiBaseUrl = 'https://example.com/',
             _endpoints = {
-                'service': 'authz/service',
-                'token': 'authz/token'
+                'service': 'service',
+                'token': 'tokens/new'
             },
             _ticketUrl = '',
             _maxAttempts = 3,
