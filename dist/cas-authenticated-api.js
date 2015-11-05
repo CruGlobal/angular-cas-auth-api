@@ -51,8 +51,8 @@ if (!String.prototype.startsWith) {
         // Configuration
         var _authenticationApiBaseUrl = 'https://example.com/',
             _endpoints = {
-                'service': 'authz/service',
-                'token': 'authz/token'
+                'service': 'service',
+                'token': 'tokens/new'
             },
             _ticketUrl = '',
             _maxAttempts = 3,
@@ -157,10 +157,13 @@ if (!String.prototype.startsWith) {
                         _deferredAuthentication = $q.defer();
 
                         // Fetch service URL
+                        // Response: {"service":"https://service_url"}
                         $injector.get('$http').get(apiUrl('service')).then(function (serviceResponse) {
                             // Use wrapper ticketUrl to fetch ticket for given URL
+                            // Response: {"service_ticket":"ST-0001-xxx"}
                             $injector.get('$http').get(_ticketUrl, {params: {service: serviceResponse.data.service}}).then(function (ticketResponse) {
                                 //Exchange ticket for access_token
+                                // Response: {"data":{"id":"399ccaa55f9745f69def01e5d97a4b78","type":"access_token","attributes":{"key_guid":"","email":"","first_name":"","last_name":"","token":""}}}
                                 $injector.get('$http').get(apiUrl('token'), {params: {st: ticketResponse.data.service_ticket}}).then(function (tokenResponse) {
                                     // Set access token
                                     _accessToken = tokenResponse.data.data.id;
