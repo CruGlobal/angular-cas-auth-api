@@ -117,10 +117,10 @@
 
                             // Use wrapper ticketUrl to fetch ticket for given URL
                             $injector.get('$http').get(_ticketUrl, {params: {service: serviceResponse.data.data.id}}).then(function (ticketResponse) {
-                                // Response: {"service_ticket":"ST-0001-xxx"}
+                                // Response: {"data":{"type":"service_ticket","id":"ST-11727-bOek55DdUQEADRIpe1eX-cas2"}}
 
                                 //Exchange ticket for access_token
-                                $injector.get('$http').get(apiUrl('token'), {params: {st: ticketResponse.data.service_ticket}}).then(function (tokenResponse) {
+                                $injector.get('$http').get(apiUrl('token'), {params: {st: ticketResponse.data.data.id}}).then(function (tokenResponse) {
                                     // Response: {"data":{"id":"399ccaa55f9745f69def01e5d97a4b78","type":"access_token","attributes":{"key_guid":"","email":"","first_name":"","last_name":"","token":""}}}
 
                                     // Set access token
