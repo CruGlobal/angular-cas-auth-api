@@ -1,13 +1,13 @@
 (function (module) {
     'use strict';
 
-    module.provider('casAuthenticatedApi', function () {
+    module.provider('casAuthApi', function () {
 
         // Configuration
         var _authenticationApiBaseUrl = 'https://example.com/',
             _endpoints = {
                 'service': 'service',
-                'token': 'tokens/new'
+                'token': 'token/new'
             },
             _ticketUrl = '',
             _maxAttempts = 3,
@@ -112,14 +112,17 @@
                         _deferredAuthentication = $q.defer();
 
                         // Fetch service URL
-                        // Response: {"service":"https://service_url"}
                         $injector.get('$http').get(apiUrl('service')).then(function (serviceResponse) {
+                            // Response: {"data":{"id":"http://localhost:3000/v1/token/new","type":"service_url"}}
+
                             // Use wrapper ticketUrl to fetch ticket for given URL
-                            // Response: {"service_ticket":"ST-0001-xxx"}
-                            $injector.get('$http').get(_ticketUrl, {params: {service: serviceResponse.data.service}}).then(function (ticketResponse) {
+                            $injector.get('$http').get(_ticketUrl, {params: {service: serviceResponse.data.data.id}}).then(function (ticketResponse) {
+                                // Response: {"service_ticket":"ST-0001-xxx"}
+
                                 //Exchange ticket for access_token
-                                // Response: {"data":{"id":"399ccaa55f9745f69def01e5d97a4b78","type":"access_token","attributes":{"key_guid":"","email":"","first_name":"","last_name":"","token":""}}}
                                 $injector.get('$http').get(apiUrl('token'), {params: {st: ticketResponse.data.service_ticket}}).then(function (tokenResponse) {
+                                    // Response: {"data":{"id":"399ccaa55f9745f69def01e5d97a4b78","type":"access_token","attributes":{"key_guid":"","email":"","first_name":"","last_name":"","token":""}}}
+
                                     // Set access token
                                     _accessToken = tokenResponse.data.data.id;
 
@@ -165,4 +168,4 @@
 
     });
 
-})(angular.module('cas-authenticated-api'));
+})(angular.module('cas-auth-api'));

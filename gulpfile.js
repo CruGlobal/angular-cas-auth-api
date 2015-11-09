@@ -20,11 +20,11 @@ gulp.task('build', ['clean'], function () {
             'src/provider.js',
             'src/config.js'
         ])
-        .pipe(concat('cas-authenticated-api.js'))
+        .pipe(concat('cas-auth-api.js'))
         .pipe(ngAnnotate())
         .pipe(gulp.dest('dist'))
         .pipe(uglify())
-        .pipe(rename('cas-authenticated-api.min.js'))
+        .pipe(rename('cas-auth-api.min.js'))
         .pipe(gulp.dest('dist'));
 });
 

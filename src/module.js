@@ -2,6 +2,6 @@
     'use strict';
 
     // Register Angular Module
-    angular.module('cas-authenticated-api', []);
+    angular.module('cas-auth-api', []);
 
 })(window.angular);

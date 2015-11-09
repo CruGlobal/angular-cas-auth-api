@@ -1,13 +1,13 @@
 {
-  "name": "angular-cas-authenticated-api",
+  "name": "angular-cas-auth-api",
   "version": "0.1.1",
   "authors": [
     "Brian Zoetewey <brian.zoetewey@ccci.org>"
   ],
   "description": "Module to authenticate angular webapps with CAS access-token protected APIs.",
-  "main": "dist/cas-authenticated-api.js",
+  "main": "dist/cas-auth-api.js",
   "license": "MIT",
-  "homepage": "https://github.com/CruGlobal/angular-cas-authenticated-api",
+  "homepage": "https://github.com/CruGlobal/angular-cas-auth-api",
   "private": true,
   "ignore": [
     "**/.*",
