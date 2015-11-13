@@ -15,7 +15,6 @@ gulp.task('clean', function () {
 gulp.task('build', ['clean'], function () {
     return gulp
         .src([
-            'src/string.polyfill.js',
             'src/module.js',
             'src/provider.js',
             'src/config.js'
