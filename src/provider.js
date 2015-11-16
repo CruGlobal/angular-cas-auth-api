@@ -13,6 +13,7 @@
           _maxAttempts = 3,
           _requireAccessToken = false,
           _cacheAccessToken = false,
+          _cacheExpiresMinutes = 25,
           _managedApis = [];
 
         /**
@@ -232,7 +233,7 @@
                 if (isManagedApi(response.config.url)) {
                     //Cache the access token after successful managed request
                     if (angular.isDefined(_accessToken) && _cacheAccessToken) {
-                        lscache.set('access_token', _accessToken, 15);
+                        lscache.set('access_token', _accessToken, _cacheExpiresMinutes);
                     }
                 }
                 return response;
