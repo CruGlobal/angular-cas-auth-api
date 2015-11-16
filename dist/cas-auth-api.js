@@ -19,6 +19,7 @@
           },
           _ticketUrl = '',
           _maxAttempts = 3,
+          _requireAccessToken = false,
           _managedApis = [];
 
         /**
@@ -48,16 +49,39 @@
         /**
          * Add a url to the managed API list
          *
-         * @param {string} url
+         * @param {string|Array.<string>} url
          * @returns {*}
          */
         var addManagedApi = this.addManagedApi = function(url) {
-            if (_managedApis.indexOf(url) === -1) {
-                _managedApis.push(url);
-            }
+            var urls = angular.isString(url) ? [url] : url;
+            angular.forEach(urls, function(value) {
+                if (this.indexOf(value) === -1) {
+                    this.push(value);
+                }
+            }, _managedApis);
             return this;
         };
 
+        /**
+         * Require an access token on all managed API requests. Default false
+         * Enabling this feature will cause the API to fetch an access token rather
+         * than waiting for a 401 Unauthorized to occur.
+         *
+         * @param {bool} require
+         * @returns {self}
+         */
+        this.setRequireAccessToken = function(require) {
+            _requireAccessToken = !!require;
+            return this;
+        };
+
+        /**
+         * Returns an full api URL for the given named endpoint
+         *
+         * @private
+         * @param {string} endpoint
+         * @returns {*}
+         */
         function apiUrl(endpoint) {
             if (typeof endpoint === 'undefined' || !_endpoints.hasOwnProperty(endpoint)) {
                 return _authenticationApiBaseUrl;
@@ -73,6 +97,7 @@
             /**
              * Is the given url managed
              *
+             * @private
              * @param {string} url
              * @returns {boolean}
              */
@@ -83,6 +108,53 @@
                     }
                 }
                 return false;
+            }
+
+            /**
+             * Begins the authentication process
+             */
+            function beginAuthentication() {
+                // Requests already deferred, bail.
+                if (angular.isObject(_deferredAuthentication)) {
+                    return;
+                }
+
+                // Create new deferred to handle authentication process
+                _deferredAuthentication = $q.defer();
+
+                // invalidate access token
+                _accessToken = undefined;
+
+                // Fetch service URL
+                $injector
+                  .get('$http')
+                  .get(apiUrl('service'))
+                  .then(function(serviceResponse) {
+                      // Use wrapper ticketUrl to fetch ticket for given URL
+                      $injector
+                        .get('$http')
+                        .get(_ticketUrl, {params: {service: serviceResponse.data.data.id}})
+                        .then(function(ticketResponse) {
+                            //Exchange ticket for access_token
+                            $injector
+                              .get('$http')
+                              .get(apiUrl('token'), {params: {st: ticketResponse.data.data.id}})
+                              .then(function(tokenResponse) {
+                                  // Set access token
+                                  _accessToken = tokenResponse.data.data.id;
+
+                                  // Resolve authentication deferred
+                                  // this will cause all pending requests to retry
+                                  _deferredAuthentication.resolve();
+                              }, function() {
+                                  _deferredAuthentication.reject('Failed to fetch token.');
+                              });
+                        }, function() {
+                            _deferredAuthentication.reject('Failed to fetch ticket.');
+                        });
+                  }, function() {
+                      _deferredAuthentication.reject('Failed to fetch service.');
+                  });
             }
 
             /**
@@ -100,15 +172,44 @@
 
                 // Only Handle URLs managed by the API
                 if (isManagedApi(config.url)) {
-                    // If we have a token, add it to the request
-                    if (typeof _accessToken !== 'undefined') {
-                        config.headers['Authorization'] = 'Bearer ' + _accessToken;
-                    }
-
                     //Increase number of attempts
                     config.attempts = (typeof config.attempts === 'number') ? config.attempts + 1 : 1;
+
+                    // If we require a token and don't have one, or api is currently authenticating
+                    // defer the request until authentication completes
+                    if ((_requireAccessToken && angular.isUndefined(_accessToken)) ||
+                      angular.isObject(_deferredAuthentication)) {
+                        return deferRequest(config);
+                    }
+                    else {
+                        // If we have a token, add it to the request
+                        if (angular.isDefined(_accessToken)) {
+                            config.headers['Authorization'] = 'Bearer ' + _accessToken;
+                        }
+                    }
                 }
                 return config;
+            }
+
+            /**
+             * Defers request config until authentication completes
+             *
+             * @param {object} config
+             * @returns {Promise.<Object>}
+             */
+            function deferRequest(config) {
+                var deferred = $q.defer();
+                beginAuthentication();
+
+                _deferredAuthentication.promise.then(function() {
+                    // Add new token to the header
+                    config.headers['Authorization'] = 'Bearer ' + _accessToken;
+                    deferred.resolve(config);
+                }, function() {
+                    deferred.reject();
+                });
+
+                return deferred.promise;
             }
 
             /**
@@ -123,44 +224,7 @@
                   response.config.attempts < _maxAttempts) {
                     // New promise for request
                     var deferred = $q.defer();
-
-                    // Start authentication process if it isn't current running
-                    if (typeof _deferredAuthentication !== 'object') {
-
-                        // Create new deferred to handle authentication process
-                        _deferredAuthentication = $q.defer();
-
-                        // Fetch service URL
-                        $injector
-                          .get('$http')
-                          .get(apiUrl('service'))
-                          .then(function(serviceResponse) {
-                              // Use wrapper ticketUrl to fetch ticket for given URL
-                              $injector
-                                .get('$http')
-                                .get(_ticketUrl, {params: {service: serviceResponse.data.data.id}})
-                                .then(function(ticketResponse) {
-                                    //Exchange ticket for access_token
-                                    $injector
-                                      .get('$http')
-                                      .get(apiUrl('token'), {params: {st: ticketResponse.data.data.id}})
-                                      .then(function(tokenResponse) {
-                                          // Set access token
-                                          _accessToken = tokenResponse.data.data.id;
-
-                                          // Resolve authentication deferred
-                                          // this will cause all pending requests to retry
-                                          _deferredAuthentication.resolve();
-                                      }, function() {
-                                          _deferredAuthentication.reject('Failed to fetch token.');
-                                      });
-                                }, function() {
-                                    _deferredAuthentication.reject('Failed to fetch ticket.');
-                                });
-                          }, function() {
-                              _deferredAuthentication.reject('Failed to fetch service.');
-                          });
-                    }
+                    beginAuthentication();
 
                     // Wait for authentication request before retrying
                     _deferredAuthentication.promise.then(function() {
