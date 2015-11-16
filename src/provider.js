@@ -1,4 +1,4 @@
-(function(module) {
+(function(module, lscache) {
     'use strict';
 
     module.provider('casAuthApi', function() {
@@ -12,6 +12,7 @@
           _ticketUrl = '',
           _maxAttempts = 3,
           _requireAccessToken = false,
+          _cacheAccessToken = false,
           _managedApis = [];
 
         /**
@@ -68,6 +69,17 @@
         };
 
         /**
+         * Cache Access Token between page reloads
+         *
+         * @param {bool} cache
+         * @returns {self}
+         */
+        this.setCacheAccessToken = function(cache) {
+            _cacheAccessToken = angular.isUndefined(lscache) ? false : !!cache;
+            return this;
+        };
+
+        /**
          * Returns an full api URL for the given named endpoint
          *
          * @private
@@ -114,8 +126,11 @@
                 // Create new deferred to handle authentication process
                 _deferredAuthentication = $q.defer();
 
-                // invalidate access token
+                // invalidate access token and cache
                 _accessToken = undefined;
+                if (_cacheAccessToken) {
+                    lscache.remove('access_token');
+                }
 
                 // Fetch service URL
                 $injector
@@ -132,7 +147,8 @@
                               .get('$http')
                               .get(apiUrl('token'), {params: {st: ticketResponse.data.data.id}})
                               .then(function(tokenResponse) {
-                                  // Set access token
+                                  // Set access token, we do not cache here.
+                                  // Cache is handled after successful request.
                                   _accessToken = tokenResponse.data.data.id;
 
                                   // Resolve authentication deferred
@@ -164,6 +180,14 @@
 
                 // Only Handle URLs managed by the API
                 if (isManagedApi(config.url)) {
+                    // If missing access token and we are caching it, see if we have one
+                    if (angular.isUndefined(_accessToken) && _cacheAccessToken) {
+                        var token = lscache.get('access_token');
+                        if (token !== null) {
+                            _accessToken = token;
+                        }
+                    }
+
                     //Increase number of attempts
                     config.attempts = (typeof config.attempts === 'number') ? config.attempts + 1 : 1;
 
@@ -204,6 +228,16 @@
                 return deferred.promise;
             }
 
+            function responseInterceptor(response) {
+                if (isManagedApi(response.config.url)) {
+                    //Cache the access token after successful managed request
+                    if (angular.isDefined(_accessToken) && _cacheAccessToken) {
+                        lscache.set('access_token', _accessToken, 15);
+                    }
+                }
+                return response;
+            }
+
             /**
              * $http Response Error Interceptor
              *
@@ -240,11 +274,11 @@
 
             return {
                 request: requestInterceptor,
+                response: responseInterceptor,
                 responseError: responseErrorInterceptor,
                 addManagedApi: addManagedApi
             };
         };
-
     });
 
     /**
@@ -284,4 +318,4 @@
         return haystack.indexOf(needle, position) === position;
     }
 
-})(angular.module('cas-auth-api'));
+})(angular.module('cas-auth-api'), window.lscache);

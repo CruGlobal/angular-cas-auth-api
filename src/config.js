@@ -1,4 +1,4 @@
-(function(module) {
+(function(module, lscache) {
     'use strict';
 
     // Configure Application to use casAuthApi to manage $http requests
@@ -10,4 +10,10 @@
         $httpProvider.interceptors.push('casAuthApi');
     });
 
-})(angular.module('cas-auth-api'));
+    module.run(function() {
+        if (angular.isDefined(lscache)) {
+            lscache.setBucket('cas-auth-api:');
+        }
+    });
+
+})(angular.module('cas-auth-api'), window.lscache);
