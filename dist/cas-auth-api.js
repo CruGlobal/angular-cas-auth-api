@@ -1,3 +1,11 @@
+(function(angular) {
+    'use strict';
+
+    // Register Angular Module
+    angular.module('cas-auth-api', []);
+
+})(window.angular);
+
 (function(module, lscache) {
     'use strict';
 
@@ -95,7 +103,7 @@
         }
 
         // Factory
-        this.$get = function($injector, $q) {
+        this.$get = ["$injector", "$q", function($injector, $q) {
             var _accessToken,
               _deferredAuthentication;
 
@@ -279,7 +287,7 @@
                 responseError: responseErrorInterceptor,
                 addManagedApi: addManagedApi
             };
-        };
+        }];
     });
 
     /**
@@ -318,5 +326,25 @@
         position = position || 0;
         return haystack.indexOf(needle, position) === position;
     }
+
+})(angular.module('cas-auth-api'), window.lscache);
+
+(function(module, lscache) {
+    'use strict';
+
+    // Configure Application to use casAuthApi to manage $http requests
+    module.config(["$httpProvider", function($httpProvider) {
+
+        // Allow casAuthenticatedApi to intercept and manipulate requests.
+        // This will handle 401 unauthorized as well as adding an access_token
+        // to all managed APIs
+        $httpProvider.interceptors.push('casAuthApi');
+    }]);
+
+    module.run(function() {
+        if (angular.isDefined(lscache)) {
+            lscache.setBucket('cas-auth-api:');
+        }
+    });
 
 })(angular.module('cas-auth-api'), window.lscache);
