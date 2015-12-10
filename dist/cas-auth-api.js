@@ -254,8 +254,8 @@
              * @see https://docs.angularjs.org/api/ng/service/$http#interceptors
              */
             function responseErrorInterceptor(response) {
-                if (response.status === 401 &&
-                  isManagedApi(response.config.url) &&
+                if (isManagedApi(response.config.url) &&
+                  wwwAuthenticateCAS(response) &&
                   response.config.attempts < _maxAttempts) {
                     // New promise for request
                     var deferred = $q.defer();
@@ -279,6 +279,11 @@
                 }
                 // Not handled by API, pass error through
                 return $q.reject(response);
+            }
+
+            function wwwAuthenticateCAS(response) {
+                var header = response.headers('WWW-Authenticate');
+                return response.status === 401 && header && startsWith('CAS', header);
             }
 
             return {
