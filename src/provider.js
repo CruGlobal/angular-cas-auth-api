@@ -10,6 +10,7 @@
               'token': 'token/new'
           },
           _ticketUrl = '',
+          _errorCallback,
           _maxAttempts = 3,
           _requireAccessToken = false,
           _cacheAccessToken = false,
@@ -77,6 +78,11 @@
          */
         this.setCacheAccessToken = function(cache) {
             _cacheAccessToken = angular.isUndefined(lscache) ? false : !!cache;
+            return this;
+        };
+
+        this.setErrorCallback = function(cb) {
+            _errorCallback = angular.isFunction(cb) ? cb : undefined;
             return this;
         };
 
@@ -159,6 +165,9 @@
                                   _deferredAuthentication.reject('Failed to fetch token.');
                               });
                         }, function() {
+                            if (angular.isFunction(_errorCallback)) {
+                                _errorCallback({code: 'ERR_TICKET', message: 'Failed to fetch ticket.'});
+                            }
                             _deferredAuthentication.reject('Failed to fetch ticket.');
                         });
                   }, function() {
