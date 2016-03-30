@@ -15,7 +15,12 @@
           _requireAccessToken = false,
           _cacheAccessToken = false,
           _cacheExpiresMinutes = 25,
-          _managedApis = [];
+          _managedApis = [],
+          _hostUrl = 'http://localhost/',
+          _casLoginUrl = 'https://thekey.me/cas/login',
+          _casTicketUrl = 'https://thekey.me/cas/api/oauth/ticket',
+          _clientId,
+          _oAuth = false;
 
         /**
          * Set the base URL of the Authentication API.
@@ -38,6 +43,65 @@
          */
         this.setTicketUrl = function(url) {
             _ticketUrl = url;
+            return this;
+        };
+
+        /**
+         * Sets the URL that the angular app is hosted on (Used for OAuth Redirect)
+         * Default: http://localhost/
+         *
+         * @param {string} url
+         * @returns {self}
+         */
+        this.setHostUrl = function(url) {
+            _hostUrl = url;
+            return this;
+        };
+
+        /**
+         * Sets the url to redirect users for the OAuth Implicit Grant Request
+         * Default: https://thekey.me/cas/login
+         *
+         * @param {string} url
+         * @returns {self}
+         */
+        this.setCasLoginUrl = function(url) {
+            _casLoginUrl = url;
+            return this;
+        };
+
+        /**
+         * Sets the url to request a CAS ticket
+         * Default: https://thekey.me/cas/api/oauth/ticket
+         *
+         * @param {string} url
+         * @returns {self}
+         */
+        this.setCasTicketUrl = function(url) {
+            _casTicketUrl = url;
+            return this;
+        };
+
+        /**
+         * Sets the Client ID to use in the OAuth Implicit Grant Request
+         *
+         * @param {string} client ID
+         * @returns {self}
+         */
+        this.setClientId = function(clientId) {
+            _clientId = clientId;
+            return this;
+        };
+
+        /**
+         * Set if the library should use the new OAuth CAS flow
+         * Default: false
+         *
+         * @param {boolean} oAuth
+         * @returns {self}
+         */
+        this.setOAuth = function(oAuth) {
+            _oAuth = oAuth;
             return this;
         };
 
@@ -121,6 +185,69 @@
                 return false;
             }
 
+            function getAccessTokenFromHash() {
+                var queryString = window.location.hash.substr(1);
+                var queries = queryString.split("&");
+                var params = {}
+                for (var i = 0; i < queries.length; i++) {
+                  if (queries[i] == [""]) { continue; }
+                    var pair = queries[i].split('=');
+                    params[pair[0]] = pair[1];
+                }
+                return params;
+            }
+
+            function serviceResponder(serviceResponse) {
+              var url, config;
+              if (_oAuth == true) {
+                // Use casTicketUrl to fetch ticket for given URL
+                  url = _casTicketUrl;
+                  config = {
+                    params: { service: serviceResponse.data.data.id},
+                    headers: {'Authorization': 'Bearer ' + getAccessTokenFromHash().access_token }
+                  };
+                } else {
+                  // Use wrapper ticketUrl to fetch ticket for given URL
+                  url = _ticketUrl;
+                  config = { params: { service: serviceResponse.data.data.id } }
+                }
+                $injector.get('$http').get(url, config).then(ticketResponder, ticketResponderError);
+            }
+
+            function serviceResponderError() {
+                _deferredAuthentication.reject('Failed to fetch service.');
+            }
+
+            function ticketResponder(ticketResponse) {
+                var st = (_oAuth == true) ? ticketResponse.data.ticket : ticketResponse.data.data.id;
+                //Exchange ticket for access_token
+                $injector
+                  .get('$http')
+                  .get(apiUrl('token'), {params: {st: st}})
+                  .then(tokenResponder, tokenResponderError);
+            }
+
+            function ticketResponderError() {
+              if (angular.isFunction(_errorCallback)) {
+                  _errorCallback({code: 'ERR_TICKET', message: 'Failed to fetch ticket.'});
+              } else {
+                  _deferredAuthentication.reject('Failed to fetch ticket.');
+              }
+            }
+
+            function tokenResponder(tokenResponse) {
+                // Set access token, we do not cache here.
+                // Cache is handled after successful request.
+                _accessToken = tokenResponse.data.data.id;
+                // Resolve authentication deferred
+                // this will cause all pending requests to retry
+                _deferredAuthentication.resolve();
+            }
+
+            function tokenResponderError() {
+                _deferredAuthentication.reject('Failed to fetch token.');
+            }
+
             /**
              * Begins the authentication process
              */
@@ -139,40 +266,18 @@
                     lscache.remove('access_token');
                 }
 
-                // Fetch service URL
-                $injector
-                  .get('$http')
-                  .get(apiUrl('service'))
-                  .then(function(serviceResponse) {
-                      // Use wrapper ticketUrl to fetch ticket for given URL
-                      $injector
-                        .get('$http')
-                        .get(_ticketUrl, {params: {service: serviceResponse.data.data.id}})
-                        .then(function(ticketResponse) {
-                            //Exchange ticket for access_token
-                            $injector
-                              .get('$http')
-                              .get(apiUrl('token'), {params: {st: ticketResponse.data.data.id}})
-                              .then(function(tokenResponse) {
-                                  // Set access token, we do not cache here.
-                                  // Cache is handled after successful request.
-                                  _accessToken = tokenResponse.data.data.id;
+                if (_oAuth == true && getAccessTokenFromHash().access_token == undefined) {
+                  $injector.get('$window').location.href =
+                    _casLoginUrl +
+                    '?response_type=token&client_id=' +
+                    _clientId +
+                    '&redirect_uri=' +
+                    _hostUrl +
+                    '&scope=fullticket';
+                }
 
-                                  // Resolve authentication deferred
-                                  // this will cause all pending requests to retry
-                                  _deferredAuthentication.resolve();
-                              }, function() {
-                                  _deferredAuthentication.reject('Failed to fetch token.');
-                              });
-                        }, function() {
-                            if (angular.isFunction(_errorCallback)) {
-                                _errorCallback({code: 'ERR_TICKET', message: 'Failed to fetch ticket.'});
-                            }
-                            _deferredAuthentication.reject('Failed to fetch ticket.');
-                        });
-                  }, function() {
-                      _deferredAuthentication.reject('Failed to fetch service.');
-                  });
+                // Fetch service URL
+                $injector.get('$http').get(apiUrl('service')).then(serviceResponder, serviceResponderError);
             }
 
             /**
