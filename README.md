@@ -1,6 +1,6 @@
 # angular-cas-auth-api
 
-AngularJS authentication module written for Cru API authentication systems.
+Module to authenticate angular webapps with CAS access-token protected APIs.
 
 Originally this module was written to support The Key (Cru CAS) before it had OAuth support. This has since been added
 and is the recommended way of authenticating.
@@ -9,11 +9,11 @@ and is the recommended way of authenticating.
 
 This module when using OAuth takes users through the following process:
 
-1. your app makes a request to a managedApi without a session
+1. app makes a request to a managedApi without a session
 2. module checks URL fragment and cache for access_token (none found)
 3. module redirects user to The Key using the implicit OAuth grant
 4. user logs in and The Key redirects user back to redirect url in module configuration with access_token(The Key) in URL fragment
-5. your app makes a request to a managedApi without a session
+5. app makes a request to a managedApi without a session
 6. module checks URL fragment and cache for access_token (found)
 7. module contacts The Key (casTicketPath) using access_token: access_token(The Key) and service: managedApi being requested
 8. Key returns a ticket to module
