@@ -321,9 +321,9 @@
                     $injector.get('$window').location.href =
                         config.casBaseUrl + config.casLoginPath +
                         '?response_type=token&client_id=' +
-                        config.clientId +
+                        encodeURIComponent(config.clientId) +
                         '&redirect_uri=' +
-                        config.redirectUrl +
+                        encodeURIComponent(config.redirectUrl) +
                         '&scope=fullticket';
                 }
 
