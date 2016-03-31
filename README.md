@@ -141,3 +141,5 @@ It will be awesome if you can help us evolve `angular-cas-auth-api`. Want to hel
 #### Todo
 - Write tests
 - refactor to ES6 with Babel
+- Add support for OAuth attributes endpoint available https://thekey.me/cas/api/oauth/attributes
+- Add support for expires_in parameter in the implicit OAuth response and set cache to expire at that time
