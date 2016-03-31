@@ -10,7 +10,6 @@
   "main": "dist/cas-auth-api.js",
   "license": "MIT",
   "homepage": "https://github.com/CruGlobal/angular-cas-auth-api",
-  "private": true,
   "devDependencies": {
     "del": "^2.0.2",
     "gulp": "^3.9.0",

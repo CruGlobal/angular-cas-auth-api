@@ -9,7 +9,6 @@
   "main": "dist/cas-auth-api.js",
   "license": "MIT",
   "homepage": "https://github.com/CruGlobal/angular-cas-auth-api",
-  "private": true,
   "ignore": [
     "**/.*",
     "node_modules",
