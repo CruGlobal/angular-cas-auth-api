@@ -19,7 +19,7 @@ This module when using OAuth takes users through the following process:
 8. Key returns a ticket to module
 9. module uses ticket to authenticate with auth-api(authenticationApiBaseUrl)
 10. auth-api returns access_token(service) to module
-11. original request sent with access_token(rails) to service
+11. original request sent with access_token(service) to service
 
 ---
 
@@ -101,9 +101,9 @@ casAuthApiProvider.configure({
   cacheAccessToken: false,
   cacheExpiresMinutes: 25,
   managedApis: [],
-  casBaseUrl: 'https://thekey.me',
-  casLoginPath: '/cas/login',
-  casTicketPath: '/cas/api/oauth/ticket',
+  casBaseUrl: 'https://thekey.me/cas/' ,
+  casLoginPath: '/login',
+  casTicketPath: '/api/oauth/ticket',
   oAuth: false,
   authenticationApiBaseUrl: 'https://auth-api.cru.org/v1'
 });

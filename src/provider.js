@@ -17,9 +17,9 @@
             cacheAccessToken: false,
             cacheExpiresMinutes: 25,
             managedApis: [],
-            casBaseUrl: 'https://thekey.me',
-            casLoginPath: '/cas/login',
-            casTicketPath: '/cas/api/oauth/ticket',
+            casBaseUrl: 'https://thekey.me/cas',
+            casLoginPath: '/login',
+            casTicketPath: '/api/oauth/ticket',
             oAuth: false,
             authenticationApiBaseUrl: 'https://auth-api.cru.org/v1'
         }, oAuthRequiredKeys = [
