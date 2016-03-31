@@ -1,8 +1,10 @@
-(function(module, lscache) {
+/*global angular */
+/*global window */
+(function (module, lscache) {
     'use strict';
 
     // Configure Application to use casAuthApi to manage $http requests
-    module.config(function($httpProvider) {
+    module.config(function ($httpProvider) {
 
         // Allow casAuthenticatedApi to intercept and manipulate requests.
         // This will handle 401 unauthorized as well as adding an access_token
@@ -10,10 +12,10 @@
         $httpProvider.interceptors.push('casAuthApi');
     });
 
-    module.run(function() {
+    module.run(function () {
         if (angular.isDefined(lscache)) {
             lscache.setBucket('cas-auth-api:');
         }
     });
 
-})(angular.module('cas-auth-api'), window.lscache);
+}(angular.module('cas-auth-api'), window.lscache));
