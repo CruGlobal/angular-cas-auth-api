@@ -4,6 +4,23 @@ AngularJS authentication module written for Cru API authentication systems.
 
 Originally this module was written to support The Key (Cru CAS) before it had OAuth support. This has since been added
 and is the recommended way of authenticating.
+
+## About
+
+This module when using OAuth takes users through the following process:
+
+1. your app makes a request to a managedApi without a session
+2. module checks URL fragment and cache for access_token (none found)
+3. module redirects user to The Key using the implicit OAuth grant
+4. user logs in and The Key redirects user back to redirect url in module configuration with access_token(The Key) in URL fragment
+5. your app makes a request to a managedApi without a session
+6. module checks URL fragment and cache for access_token (found)
+7. module contacts The Key (casTicketPath) using access_token: access_token(The Key) and service: managedApi being requested
+8. Key returns a ticket to module
+9. module uses ticket to authenticate with auth-api(authenticationApiBaseUrl)
+10. auth-api returns access_token(service) to module
+11. original request sent with access_token(rails) to service
+
 ---
 
 ## Installation
@@ -21,7 +38,7 @@ If you are going to use The Key (Cru CAS) as your CAS authenticator you will nee
 send an email to [apps@cru.org](mailto:apps@cru.org?subject=New OAuth Client Request for The Key) with the subject **New OAuth Client Request for The Key**.
 
 
-###### 1. Configure `casAuthApi`:
+###### 2. Configure `casAuthApi`:
 
 ```js
 angular.module('myApp', ['cas-auth-api'])
@@ -36,7 +53,7 @@ angular.module('myApp', ['cas-auth-api'])
   }]);
 ```
 
-###### 2. Catch `casAuthApi` errors and do something with them (optional):
+###### 3. Catch `casAuthApi` errors and do something with them (optional):
 
 ```js
 angular.module('myApp', ['cas-auth-api'])
@@ -120,3 +137,7 @@ It will be awesome if you can help us evolve `angular-cas-auth-api`. Want to hel
 4. Run the tests: `gulp test`.
 5. Build: `gulp build`
 6. Create a [Pull Request](https://github.com/CruGlobal/angular-cas-auth-api/compare).
+
+#### Todo
+- Write tests
+- refactor to ES6 with Babel
