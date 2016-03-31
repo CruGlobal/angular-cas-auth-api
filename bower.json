@@ -2,7 +2,8 @@
   "name": "angular-cas-auth-api",
   "version": "0.1.4",
   "authors": [
-    "Brian Zoetewey <brian.zoetewey@ccci.org>"
+    "Brian Zoetewey <brian.zoetewey@ccci.org>",
+    "Tataihono Nikora <tataihono.nikora@cru.org>"
   ],
   "description": "Module to authenticate angular webapps with Cru CAS access-token protected APIs.",
   "main": "dist/cas-auth-api.js",
